@@ -30,10 +30,15 @@ public class JPCreator {
 		new File(project.getLocation().toString() + "/src").mkdirs();
 	}
 
-	public IProject createJavaProject(IProject project) {
+	public IProject createJavaProject(String project_name) {
 		IProgressMonitor progressMonitor = new NullProgressMonitor();
+		IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
+		IProject project = root.getProject(project_name);
 		IJavaProject javaProject = null;
 		try {
+			project.create(progressMonitor);
+			project.open(progressMonitor);
+			
 			// Creating JavaProject
 			IProjectDescription description = project.getDescription();
 			String[] natures = description.getNatureIds();
@@ -60,14 +65,13 @@ public class JPCreator {
 		return project;
 	}
 	
-	@SuppressWarnings("resource")
-	public void downloadFile()
+	public void downloadFile(String url, IProject project)
 	{
+		FileOutputStream fos;
 		try {
-			URL website = new URL("https://github.com/PierreSachot/JanuaryGameOfLife/raw/master/january.jar");
+			URL website = new URL(url);
 			ReadableByteChannel rbc = Channels.newChannel(website.openStream());
-			FileOutputStream fos;
-			fos = new FileOutputStream("january.jar");
+			fos = new FileOutputStream(project.getLocation().toString() + "/january.jar");
 			fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
