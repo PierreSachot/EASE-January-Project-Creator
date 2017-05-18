@@ -16,7 +16,13 @@ import org.eclipse.jdt.launching.IVMInstall;
 import org.eclipse.jdt.launching.JavaRuntime;
 import org.eclipse.jdt.launching.LibraryLocation;
 
+import java.io.File;
+
 public class JPCreator {
+	
+	public void createSourceFolder(IProject project) {
+		new File(project.getLocation().toString() + "/src").mkdirs();
+	}
 
 	public IJavaProject createJavaProject(String projectName) {
 		IProgressMonitor progressMonitor = new NullProgressMonitor();
