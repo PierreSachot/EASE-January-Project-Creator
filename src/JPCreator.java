@@ -17,6 +17,12 @@ import org.eclipse.jdt.launching.JavaRuntime;
 import org.eclipse.jdt.launching.LibraryLocation;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.net.URL;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
 
 public class JPCreator {
 	
@@ -24,15 +30,10 @@ public class JPCreator {
 		new File(project.getLocation().toString() + "/src").mkdirs();
 	}
 
-	public IJavaProject createJavaProject(String projectName) {
+	public IProject createJavaProject(IProject project) {
 		IProgressMonitor progressMonitor = new NullProgressMonitor();
-		IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
-		IProject project = root.getProject(projectName);
 		IJavaProject javaProject = null;
 		try {
-			project.create(progressMonitor);
-			project.open(progressMonitor);
-
 			// Creating JavaProject
 			IProjectDescription description = project.getDescription();
 			String[] natures = description.getNatureIds();
@@ -56,7 +57,25 @@ public class JPCreator {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		return javaProject;
+		return project;
+	}
+	
+	@SuppressWarnings("resource")
+	public void downloadFile()
+	{
+		try {
+			URL website = new URL("https://github.com/PierreSachot/JanuaryGameOfLife/raw/master/january.jar");
+			ReadableByteChannel rbc = Channels.newChannel(website.openStream());
+			FileOutputStream fos;
+			fos = new FileOutputStream("january.jar");
+			fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 }
