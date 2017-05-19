@@ -1,4 +1,3 @@
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -12,9 +11,7 @@ import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jdt.core.IClasspathEntry;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.JavaCore;
-import org.eclipse.jdt.launching.IVMInstall;
 import org.eclipse.jdt.launching.JavaRuntime;
-import org.eclipse.jdt.launching.LibraryLocation;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -25,7 +22,7 @@ import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 
 public class JPCreator {
-	
+
 	public void createSourceFolder(IProject project) {
 		new File(project.getLocation().toString() + "/src").mkdirs();
 	}
@@ -38,7 +35,7 @@ public class JPCreator {
 		try {
 			project.create(progressMonitor);
 			project.open(progressMonitor);
-			
+
 			// Creating JavaProject
 			IProjectDescription description = project.getDescription();
 			String[] natures = description.getNatureIds();
@@ -51,12 +48,8 @@ public class JPCreator {
 
 			// Adding dependencies
 			Set<IClasspathEntry> entries = new HashSet<IClasspathEntry>();
-			entries.addAll(Arrays.asList(javaProject.getRawClasspath()));
-			IVMInstall vmInstall = JavaRuntime.getDefaultVMInstall();
-			LibraryLocation[] locations = JavaRuntime.getLibraryLocations(vmInstall);
-			for (LibraryLocation element : locations) {
-				entries.add(JavaCore.newLibraryEntry(element.getSystemLibraryPath(), null, null));
-			}
+			entries.add(JavaCore.newSourceEntry(project.getFullPath().append("src")));
+			entries.add(JavaRuntime.getDefaultJREContainerEntry());
 			javaProject.setRawClasspath(entries.toArray(new IClasspathEntry[entries.size()]), progressMonitor);
 		} catch (CoreException e) {
 			// TODO Auto-generated catch block
@@ -64,9 +57,8 @@ public class JPCreator {
 		}
 		return project;
 	}
-	
-	public void downloadFile(String url, IProject project)
-	{
+
+	public void downloadFile(String url, IProject project) {
 		FileOutputStream fos;
 		try {
 			URL website = new URL(url);
