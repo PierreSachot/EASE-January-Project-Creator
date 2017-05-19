@@ -1,1 +1,1 @@
-# EASE-January-Project-Creator
+# EASE-Project-Creator

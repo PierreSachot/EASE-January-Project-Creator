@@ -1,20 +1,15 @@
-import java.util.HashSet;
-import java.util.Set;
-
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IProjectDescription;
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
-import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jdt.core.IClasspathEntry;
-import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.JavaCore;
+import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.launching.JavaRuntime;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URL;
@@ -23,55 +18,55 @@ import java.nio.channels.ReadableByteChannel;
 
 public class JPCreator {
 
-	public void createSourceFolder(IProject project) {
-		new File(project.getLocation().toString() + "/src").mkdirs();
+	public void createJavaSrcFolder(Entries entries) {
+		new File(entries.getProject().getLocation().toString() + "/src").mkdirs();
+		entries.getEntries().add(JavaCore.newSourceEntry(entries.getProject().getFullPath().append("src")));
 	}
 
-	public IProject createJavaProject(String project_name) {
-		IProgressMonitor progressMonitor = new NullProgressMonitor();
+	public Entries createJavaProject(String project_name) throws CoreException {
 		IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
 		IProject project = root.getProject(project_name);
-		IJavaProject javaProject = null;
-		try {
-			project.create(progressMonitor);
-			project.open(progressMonitor);
+		Entries entries = new Entries(project);
+		IProgressMonitor progressMonitor = entries.getProgressMonitor();
+		project.create(progressMonitor);
+		project.open(progressMonitor);
 
-			// Creating JavaProject
-			IProjectDescription description = project.getDescription();
-			String[] natures = description.getNatureIds();
-			String[] newNatures = new String[natures.length + 1];
-			System.arraycopy(natures, 0, newNatures, 0, natures.length);
-			newNatures[natures.length] = JavaCore.NATURE_ID;
-			description.setNatureIds(newNatures);
-			project.setDescription(description, progressMonitor);
-			javaProject = JavaCore.create(project);
+		// Creating JavaProject
+		IProjectDescription description = project.getDescription();
+		String[] natures = description.getNatureIds();
+		String[] newNatures = new String[natures.length + 1];
+		System.arraycopy(natures, 0, newNatures, 0, natures.length);
+		newNatures[natures.length] = JavaCore.NATURE_ID;
+		description.setNatureIds(newNatures);
+		project.setDescription(description, progressMonitor);
+		entries.setJavaProject(JavaCore.create(project));
 
-			// Adding dependencies
-			Set<IClasspathEntry> entries = new HashSet<IClasspathEntry>();
-			entries.add(JavaCore.newSourceEntry(project.getFullPath().append("src")));
-			entries.add(JavaRuntime.getDefaultJREContainerEntry());
-			javaProject.setRawClasspath(entries.toArray(new IClasspathEntry[entries.size()]), progressMonitor);
-		} catch (CoreException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		return project;
+		// Adding dependenciess
+		entries.getEntries().add(JavaRuntime.getDefaultJREContainerEntry());
+		entries.getJavaProject().setRawClasspath(
+				entries.getEntries().toArray(new IClasspathEntry[entries.getEntries().size()]), progressMonitor);
+		entries.getProject().refreshLocal(0, entries.getProgressMonitor());
+		return entries;
 	}
 
-	public void downloadFile(String url, IProject project) {
-		FileOutputStream fos;
-		try {
-			URL website = new URL(url);
-			ReadableByteChannel rbc = Channels.newChannel(website.openStream());
-			fos = new FileOutputStream(project.getLocation().toString() + "/january.jar");
-			fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
-		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+	public void createJavaDependencies(Entries entries, String libraryName) throws JavaModelException {
+		entries.getEntries()
+				.add(JavaCore.newLibraryEntry(entries.getProject().getFullPath().append(libraryName), null, null));
+		entries.getJavaProject().setRawClasspath(
+				entries.getEntries().toArray(new IClasspathEntry[entries.getEntries().size()]),
+				entries.getProgressMonitor());
+
+	}
+
+	public String downloadFile(String url, Entries entries, String nom) throws IOException {
+		FileOutputStream fos = null;
+		URL website = new URL(url);
+		ReadableByteChannel rbc = Channels.newChannel(website.openStream());
+		fos = new FileOutputStream(entries.getProject().getLocation().toString() + "/" + nom);
+		fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+		System.out.println("Download complete!");
+		fos.close();
+		return nom;
 	}
 
 }
